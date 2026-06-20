@@ -355,8 +355,8 @@
    Replace these two values with your own project's URL and anon
    public key (Project Settings → API in your Supabase dashboard).
    See SETUP_GUIDE.md for full instructions. */
-const SUPABASE_URL = "YOUR_SUPABASE_URL_HERE".trim();
-const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY_HERE".trim();
+const SUPABASE_URL = "https://eaqsqpepfixrredkcfqd.supabase.co".trim();
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVhcXNxcGVwZml4cnJlZGtjZnFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NzA5NzAsImV4cCI6MjA5NzU0Njk3MH0.nQkXiwyehLVLOLFlmlAuzr2TgApv9vebXMMcUUR6YzQ".trim();
 
 let supabase = null;
 let supabaseLoadError = false;
@@ -964,10 +964,6 @@ function renderCategoryForm(wrap, existing){
 }
 
 /* ---------- Debate form with dynamic counter-arguments + rebuttals ---------- */
-
- const SUPABASE_URL = "https://eaqsqpepfixrredkcfqd.supabase.co".trim();
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVhcXNxcGVwZml4cnJlZGtjZnFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NzA5NzAsImV4cCI6MjA5NzU0Njk3MH0.nQkXiwyehLVLOLFlmlAuzr2TgApv9vebXMMcUUR6YzQ".trim();
-  
 function renderDebateForm(wrap, existing){
   const isEdit = !!existing;
 
