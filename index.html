@@ -358,13 +358,13 @@
 const SUPABASE_URL = "https://eaqsqpepfixrredkcfqd.supabase.co".trim();
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVhcXNxcGVwZml4cnJlZGtjZnFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NzA5NzAsImV4cCI6MjA5NzU0Njk3MH0.nQkXiwyehLVLOLFlmlAuzr2TgApv9vebXMMcUUR6YzQ".trim();
 
-let supabase = null;
+let sb = null;
 let supabaseLoadError = false;
 try{
   const keysProvided = SUPABASE_URL.startsWith("http") && SUPABASE_ANON_KEY && SUPABASE_ANON_KEY !== "YOUR_SUPABASE_ANON_KEY_HERE";
   if(keysProvided){
     if(window.supabase && typeof window.supabase.createClient === "function"){
-      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     } else {
       // The Supabase library script tag failed to load (CDN blocked,
       // offline, ad-blocker, etc.) — fail safe instead of crashing
@@ -390,7 +390,7 @@ let state = {
   loaded: false
 };
 let isAdmin = false;
-let configError = !supabase || supabaseLoadError;
+let configError = !sb || supabaseLoadError;
 
 function cid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 
@@ -419,7 +419,7 @@ async function loadData(){
     return;
   }
   try{
-    const { data, error } = await supabase
+    const { data, error } = await sb
       .from("site_content")
       .select("data")
       .eq("id", ROW_ID)
@@ -443,7 +443,7 @@ async function saveData(){
     contactEmail: state.contactEmail,
     legal: state.legal
   };
-  const { error } = await supabase
+  const { error } = await sb
     .from("site_content")
     .update({ data: payload, updated_at: new Date().toISOString() })
     .eq("id", ROW_ID);
@@ -487,7 +487,7 @@ document.getElementById("adminToggleBtn").addEventListener("click", ()=>{
   }
 });
 document.getElementById("logoutBtn").addEventListener("click", async ()=>{
-  if(supabase) await supabase.auth.signOut();
+  if(sb) await sb.auth.signOut();
   isAdmin = false;
   document.getElementById("adminArea").classList.add("hidden");
   updateAdminBar();
@@ -551,7 +551,7 @@ function openAdminModal(){
   const tryLogin = async ()=>{
     const btn = document.getElementById("confirmAdmin");
     btn.textContent = "Logging in…";
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await sb.auth.signInWithPassword({
       email: emailInput.value.trim(),
       password: passInput.value
     });
@@ -1216,11 +1216,11 @@ function renderPagesForm(wrap){
 
 /* ---------- Init ---------- */
 (async function init(){
-  if(supabase){
+  if(sb){
     try{
-      const { data } = await supabase.auth.getSession();
+      const { data } = await sb.auth.getSession();
       isAdmin = !!(data && data.session);
-      supabase.auth.onAuthStateChange((_event, session)=>{
+      sb.auth.onAuthStateChange((_event, session)=>{
         isAdmin = !!session;
         updateAdminBar();
       });
