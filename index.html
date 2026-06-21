@@ -18,11 +18,9 @@
     --black:#0B0C0E;
     --accent:#5B85B8;
     --accent-dark:#3F6493;
-    --support:#3B5C82;
-    --oppose:#5A6772;
-    --radius-sm:6px;
-    --radius-md:10px;
-    --radius-lg:16px;
+    --radius-sm:3px;
+    --radius-md:5px;
+    --radius-lg:8px;
   }
   *{margin:0;padding:0;box-sizing:border-box;}
   html{scroll-behavior:smooth;}
@@ -73,7 +71,7 @@
 
   /* ---------- HERO ---------- */
   #hero{
-    background:linear-gradient(180deg, var(--navy) 0%, var(--navy) 75%, var(--charcoal) 100%);
+    background:var(--navy);
     padding-top:84px;padding-bottom:64px;
   }
   #hero .wrap{display:flex;flex-direction:column;gap:18px;max-width:760px;}
@@ -124,8 +122,11 @@
     flex-shrink:0;font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;font-weight:600;
     color:#fff;background:var(--navy);padding:5px 10px;border-radius:var(--radius-sm);height:fit-content;
   }
-  .stance.support .tag{background:var(--support);}
-  .stance.oppose .tag{background:var(--oppose);}
+  .stance.strongly_agree .tag{background:#2F5377;}
+  .stance.agree .tag{background:#3F6493;}
+  .stance.nuanced .tag{background:var(--gray-light);color:var(--black);}
+  .stance.disagree .tag{background:#5A6772;}
+  .stance.strongly_disagree .tag{background:#3A4046;}
   .stance p{font-size:14.5px;color:#D8DBDF;white-space:pre-wrap;}
 
   /* ---------- ARTICLES ---------- */
@@ -141,10 +142,25 @@
   .article-row p{font-size:13.5px;color:#B7BCC4;max-width:560px;}
   .article-row .arrow{font-size:18px;color:var(--gray);flex-shrink:0;padding-top:4px;}
 
-  .article-detail{background:var(--navy-light);border-radius:var(--radius-lg);padding:32px;max-width:720px;}
+  .article-detail{background:var(--navy-light);border-radius:var(--radius-lg);padding:32px;max-width:720px;margin:0 auto;}
   .article-detail .meta{font-size:12px;letter-spacing:0.07em;text-transform:uppercase;color:var(--gray);margin-bottom:10px;}
   .article-detail h3{font-size:24px;font-weight:600;color:var(--off-white);margin-bottom:18px;}
   .article-detail .content{font-size:15.5px;color:#D8DBDF;white-space:pre-wrap;}
+
+  /* ---------- ARTICLE PAGE (separate "page", own URL via ?article=) ---------- */
+  #articlePage{display:none;}
+  body.article-mode header,
+  body.article-mode main,
+  body.article-mode footer,
+  body.article-mode .admin-bar{
+    display:none;
+  }
+  body.article-mode #articlePage{
+    display:block;
+    min-height:100vh;
+    background:var(--charcoal);
+    padding:48px 28px 80px;
+  }
 
   /* ---------- ABOUT ---------- */
   #about{background:var(--charcoal);}
@@ -188,13 +204,16 @@
   .form-actions{margin-top:24px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;}
   .hint{font-size:12px;color:var(--gray-light);margin-top:6px;}
   .error-text{color:#B7BCC4;font-size:12.5px;margin-top:10px;}
-  .radio-row{display:flex;gap:10px;margin-top:8px;}
+  .radio-row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;}
   .radio-opt{
-    flex:1;border:1px solid rgba(244,244,242,0.15);border-radius:var(--radius-md);
-    padding:10px 14px;text-align:center;font-size:13px;cursor:pointer;transition:background .15s,border-color .15s;
+    flex:1;min-width:110px;border:1px solid rgba(244,244,242,0.15);border-radius:var(--radius-md);
+    padding:10px 10px;text-align:center;font-size:12.5px;cursor:pointer;transition:background .15s,border-color .15s;
   }
-  .radio-opt.selected.support{background:rgba(59,92,130,0.35);border-color:var(--support);}
-  .radio-opt.selected.oppose{background:rgba(90,103,114,0.35);border-color:var(--oppose);}
+  .radio-opt.selected.strongly_agree{background:rgba(47,83,119,0.4);border-color:#2F5377;}
+  .radio-opt.selected.agree{background:rgba(63,100,147,0.4);border-color:#3F6493;}
+  .radio-opt.selected.nuanced{background:rgba(154,158,166,0.3);border-color:var(--gray-light);}
+  .radio-opt.selected.disagree{background:rgba(90,103,114,0.4);border-color:#5A6772;}
+  .radio-opt.selected.strongly_disagree{background:rgba(58,64,70,0.5);border-color:#3A4046;}
 
   /* ---------- counter-arg builder (admin) ---------- */
   .ca-block{
@@ -336,6 +355,8 @@
   </section>
 </main>
 
+<div id="articlePage"></div>
+
 <footer>
   <div class="footer-inner">
     <div class="footer-top">
@@ -402,6 +423,26 @@ let configError = !sb || supabaseLoadError;
 
 function cid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 
+function slugify(text){
+  return String(text)
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // strip accents
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80) || "article";
+}
+
+function uniqueSlug(baseSlug, excludeId){
+  let slug = baseSlug;
+  let n = 2;
+  const taken = new Set(state.articles.filter(a=>a.id!==excludeId).map(a=>a.slug));
+  while(taken.has(slug)){
+    slug = `${baseSlug}-${n}`;
+    n++;
+  }
+  return slug;
+}
+
 /* ---------- Default content (used only if the table is empty) ---------- */
 function defaultData(){
   return {
@@ -438,7 +479,19 @@ async function loadData(){
     console.error("Failed to load site content from Supabase:", e);
     state = defaultData();
   }
+  ensureArticleSlugs();
   state.loaded = true;
+}
+
+/* Articles created before the slug system existed won't have a
+   `slug` field yet — generate one for them on load so old content
+   still gets a working URL, without needing to re-save it. */
+function ensureArticleSlugs(){
+  state.articles.forEach(a=>{
+    if(!a.slug){
+      a.slug = uniqueSlug(slugify(a.title), a.id);
+    }
+  });
 }
 
 async function saveData(){
@@ -484,6 +537,15 @@ function formatDate(iso){
 }
 function categoryById(id){ return state.categories.find(c=>c.id===id); }
 function debatesInCategory(catId){ return state.debates.filter(d=>d.categoryId===catId); }
+
+const STANCE_LABELS = {
+  strongly_agree: "Strongly agree",
+  agree: "Agree",
+  nuanced: "Nuanced",
+  disagree: "Disagree",
+  strongly_disagree: "Strongly disagree"
+};
+function stanceLabel(stance){ return STANCE_LABELS[stance] || STANCE_LABELS.nuanced; }
 
 /* ---------- Admin auth (Supabase Auth: real email + password) ---------- */
 document.getElementById("adminToggleBtn").addEventListener("click", ()=>{
@@ -708,7 +770,7 @@ function renderDebateBlock(d){
       ` : ""}
 
       <div class="stance ${d.stance}">
-        <span class="tag">${d.stance === 'support' ? 'We support' : 'We oppose'}</span>
+        <span class="tag">${stanceLabel(d.stance)}</span>
         <p>${escapeHtml(d.position)}</p>
       </div>
     </div>
@@ -733,24 +795,77 @@ function renderArticlesSection(){
     </div>
   `).join("");
   list.querySelectorAll("[data-art]").forEach(el=>{
-    el.addEventListener("click", ()=> openArticleDetail(el.dataset.art));
+    el.addEventListener("click", ()=>{
+      const art = state.articles.find(a=>a.id===el.dataset.art);
+      if(art) goToArticle(art);
+    });
   });
 }
 
-function openArticleDetail(articleId){
-  const art = state.articles.find(a=>a.id===articleId);
-  if(!art) return;
-  const list = document.getElementById("articlesList");
-  list.innerHTML = `
-    <button class="back-link" id="backToArticles">← All articles</button>
-    <div class="article-detail">
-      <div class="meta">${formatDate(art.createdAt)}</div>
-      <h3>${escapeHtml(art.title)}</h3>
-      <div class="content">${escapeHtml(art.content)}</div>
+/* Navigate to an article's own URL (?article=slug) using real history
+   entries, so the back/forward browser buttons work and the link can
+   be shared directly. */
+function goToArticle(art){
+  const url = new URL(window.location.href);
+  url.searchParams.set("article", art.slug);
+  history.pushState({ articleSlug: art.slug }, "", url);
+  showArticlePage(art);
+}
+
+function exitArticlePage(){
+  const url = new URL(window.location.href);
+  url.searchParams.delete("article");
+  history.pushState({}, "", url);
+  hideArticlePage();
+}
+
+function showArticlePage(art){
+  document.body.classList.add("article-mode");
+  const page = document.getElementById("articlePage");
+  page.innerHTML = `
+    <div class="wrap">
+      <button class="back-link" id="backToSite">← Back to Conservative Renewal</button>
+      <div class="article-detail">
+        <div class="meta">${formatDate(art.createdAt)}</div>
+        <h3>${escapeHtml(art.title)}</h3>
+        <div class="content">${escapeHtml(art.content)}</div>
+      </div>
     </div>
   `;
-  document.getElementById("backToArticles").addEventListener("click", renderArticlesSection);
+  document.getElementById("backToSite").addEventListener("click", exitArticlePage);
+  window.scrollTo({top:0});
 }
+
+function hideArticlePage(){
+  document.body.classList.remove("article-mode");
+  document.getElementById("articlePage").innerHTML = "";
+}
+
+/* Check the current URL on load / on back-forward navigation, and
+   show the matching article page if present. */
+function syncArticleFromUrl(){
+  const slug = new URL(window.location.href).searchParams.get("article");
+  if(!slug){
+    hideArticlePage();
+    return;
+  }
+  const art = state.articles.find(a=>a.slug===slug);
+  if(art){
+    showArticlePage(art);
+  } else {
+    // Unknown slug (e.g. deleted article, or data not loaded yet)
+    document.body.classList.add("article-mode");
+    document.getElementById("articlePage").innerHTML = `
+      <div class="wrap">
+        <button class="back-link" id="backToSite">← Back to Conservative Renewal</button>
+        <div class="empty">This article could not be found. It may have been removed.</div>
+      </div>
+    `;
+    document.getElementById("backToSite").addEventListener("click", exitArticlePage);
+  }
+}
+
+window.addEventListener("popstate", syncArticleFromUrl);
 
 /* ============================================================
    ADMIN RENDER
@@ -1006,7 +1121,7 @@ function renderDebateForm(wrap, existing){
     return;
   }
 
-  let stanceValue = isEdit ? existing.stance : "support";
+  let stanceValue = isEdit ? existing.stance : "agree";
   // working copy of counters: [{ id, text, rebuttals: [string,...] }, ...]
   let counters = isEdit && Array.isArray(existing.counters)
     ? existing.counters.map(c=>({ id: cid(), text: c.text||"", rebuttals: Array.isArray(c.rebuttals) ? [...c.rebuttals] : [] }))
@@ -1029,9 +1144,12 @@ function renderDebateForm(wrap, existing){
       <input type="text" id="debQuestion" placeholder="e.g. Should corporate tax be lowered?" value="${isEdit ? escapeHtml(existing.question) : ''}">
 
       <label>Conservative Renewal's position</label>
-      <div class="radio-row">
-        <div class="radio-opt support ${stanceValue==='support'?'selected':''}" data-stance="support">We support</div>
-        <div class="radio-opt oppose ${stanceValue==='oppose'?'selected':''}" data-stance="oppose">We oppose</div>
+      <div class="radio-row radio-row-5">
+        <div class="radio-opt strongly_agree ${stanceValue==='strongly_agree'?'selected':''}" data-stance="strongly_agree">Strongly agree</div>
+        <div class="radio-opt agree ${stanceValue==='agree'?'selected':''}" data-stance="agree">Agree</div>
+        <div class="radio-opt nuanced ${stanceValue==='nuanced'?'selected':''}" data-stance="nuanced">Nuanced</div>
+        <div class="radio-opt disagree ${stanceValue==='disagree'?'selected':''}" data-stance="disagree">Disagree</div>
+        <div class="radio-opt strongly_disagree ${stanceValue==='strongly_disagree'?'selected':''}" data-stance="strongly_disagree">Strongly disagree</div>
       </div>
 
       <label>Argument defending our position</label>
@@ -1194,8 +1312,19 @@ function renderArticleForm(wrap, existing){
     const content = document.getElementById("artContent").value.trim();
     const excerpt = document.getElementById("artExcerpt").value.trim();
     if(!title || !content){ document.getElementById("artErr").classList.remove("hidden"); return; }
-    if(isEdit){ existing.title = title; existing.content = content; existing.excerpt = excerpt; }
-    else { state.articles.push({ id: cid(), title, content, excerpt, createdAt: Date.now() }); }
+    if(isEdit){
+      existing.title = title;
+      existing.content = content;
+      existing.excerpt = excerpt;
+      // Keep the existing slug so previously shared links keep working.
+      // Only generate one if this article predates the slug system.
+      if(!existing.slug){
+        existing.slug = uniqueSlug(slugify(title), existing.id);
+      }
+    } else {
+      const slug = uniqueSlug(slugify(title), null);
+      state.articles.push({ id: cid(), title, content, excerpt, slug, createdAt: Date.now() });
+    }
     const ok3 = await saveDataSafe();
     if(!ok3) return;
     renderAll();
@@ -1256,6 +1385,7 @@ function renderPagesForm(wrap){
   updateAdminBar();
   await loadData();
   renderAll();
+  syncArticleFromUrl();
 })();
 </script>
 </body>
